@@ -7,7 +7,8 @@ REST API version 0.2.0 available under, `/0.2.0/`.
     POST  /task/<task-id>/claim
     GET   /task/<task-id>/artifact-url
     POST  /task/<task-id>/completed
-    GET   /claim-work/<worker-type>
+    GET   /claim-work/<provisioner-id>/<worker-type>
+    GET   /pending-tasks/<provisioner-id>
 
 
 REST API additions for version 0.2.1.
@@ -39,7 +40,7 @@ scheduler can confirm task submission.
 **Response**
 
     {
-      // Task status structure
+      status:         // Task status structure
     }
 
 **Error codes**
@@ -116,7 +117,7 @@ until this method returns `200 OK` or `404`.
 
 **Response**
     {
-      // Task status structure
+      status:         // Task status structure
     }
 
 **Error codes**
@@ -145,3 +146,6 @@ Poll a task that requires the given worker-type.
   * `204`, No tasks available, response: `{sleep: <number of seconds>}`
   * `404`, Task not found (ie. never uploaded or resolved)
   * `410`, Task have been assigned to another worker.
+
+
+### **GET** `/pending-tasks/<provisioner-id>`

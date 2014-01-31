@@ -37,42 +37,67 @@ Terminology
     basically be virtual image version.
 
 
-Common Data Types
------------------
-
-    task-id           uuid v4           Unique task identifier
-    worker-type       [^.]*             String identifying a worker type/class
-                      (max 64 chars, not containing any dots)
-    state             enum              pending|running|completed|failed
-    run-id            int               Int that for each task-id starts from 1
-    worker-id         [^.]*\.[^.]*      Unique Worker identifier
-                      (max 64 chars, must contain exactly one dot)
-
-    task-status       JSON              Task status structure
-    {
-      task_id, worker_type, state, reason, retries, deadline, priority,
-      taken_until, runs : [{run_id, worker_id}]
-    }
+Common Identifiers
+------------------
+Whenever, we talk about an _id_ it is a with the exception of `run-id` an string
+of at most 36 alpha-numeric characters (plus `_` and `-`).
 
 
-Queue Database Schema
+  Name                | Description
+  -------------------:|--------------------------------------------------------
+  `task-id`           | Identifies a unique task
+  `run-id`            | Identifies a run of a task (this is an integer, max 999)
+  `worker-group`      | Identifies a group of workers
+  `worker-id`         | Identifies a specific worker within a group
+  `provisioner-id`    | Identifies a provisioner
+  `worker-type`       | Identifies a worker type for a given provisioner
+
+Note, that `worker-id` and `worker-type` are not globally unique, they are
+merely identifiers given a `worker-group` or a `provisioner-id`, respectively.
+
+The only identifier that is assigned by the queue is the `run-id` all other
+identifiers are dynamically allocated when you call into the queue. For example
+if you want to add a new machine type and provisioner, you just give them a
+unique name and start submitting tasks for them.
+
+By convention non-uuid identifiers should be either prefixed by irc nickname of
+the person who invented it, or registered in queue documentation to ensure that
+they are unique.
+
+**Worker identification**, the alert reader will notice that a worker is
+identified by two ids `worker-group` and `worker-id`. In this case a group of
+workers could identify a master node that manages a cluster of specialized
+hardware. The worker-group could also identify multi-core EC2 instance under
+which each `worker-id` identifies a process. The `worker-group` identifier is
+often be useful for routing, where as this `worker-id` (in combination with
+`worker-group`) will identify a process, specialized hardware node or folder
+within which the task ran.
+
+
+Task Status Structure
 ---------------------
+The task status structure contains all data stored the queue about a task. The
+purpose of this structure is track the state of a task until it is resolved.
 
-**Tasks Table** (also known as task status structure)
-
-    task_id           uuid
-    worker_type       string max 64
-    state             pending|running|completed|failed|canceled
-    reason            none|retries-failed|timeout|...
-    retries           Int (number of retries left)
-    deadline          timestamp
-    priority          double
-    taken_until       timestamp (usual set to now + 20 min whenever the task
-                      is assigned, claimed or reclaimed)
-
-**Runs Table**
-
-    run_id            int
-    task_id           uuid
-    worker_id         worker-id (use if we have to cancel the task)
-    primary key(run_id, task_id)
+``` Javascript
+{
+  "task_id":            // Unique task identifier
+  "provisioner_id":     // Provisioner identifier
+  "worker_type":        // Type of worker to be provisioned by provisioner
+  "runs": [
+    {
+      "run_id":         // run-id, an integer starting from 1
+      "worker_group":   // worker group identifier
+      "worker_id":      // worker identifier
+    }
+  ],
+  "state":              // pending|running|completed|failed
+  "reason":             // String such as none, retries-failed, timeout, canceled
+  "routing":            // Task specific routing keys
+  "retries":            // Number of retries left
+  "priority":           // Double relative priority
+  "created":            // Creation time (ISO 8601)
+  "deadline":           // Deadline for resolution after this either failed or completed
+  "taken_until":        // Time until it reverses from running to pending
+}
+```

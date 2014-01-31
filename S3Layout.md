@@ -18,21 +18,64 @@ Task definition uploaded when the task is published, task is not accepted before
 this file has be uploaded to S3 by the queue.
 
 ### `/<task-id>/resolution.json`
-When a task is resolved a status JSON blob is written to this file. This file is
-never overwritten, as a task is only resolved once. Basically this points to
-which `<run-id>` caused task resolution and dump of database entries for this
-task before it was deleted from the database.
+When a task is resolved the following structure is written to this file:
+``` Javascript
+{
+  "version":            "0.2.0",
+  "status":             // Task status structure
+  "result":             // URL to results.json from run that completed the task
+  "logs":               // URL to logs.json from run that completed the task
+  // If not completed both `results` and `logs` are undefined.
+}
+```
 
 ### `/<task-id>/runs/<run-id>/logs.json`
-Created as soon as a worker knows where it's logs will be stored. If logs are
+This is a mapping from logical log name to URL for fetching said log. It must be
+created as soon as a worker knows where it's logs will be stored. If logs are
 uploaded after the run, you can upload this after logs have been uploaded. If
 logs are streamed to an online resource, this file should be uploaded as soon
-as stream have started. Don't upload after task is resolved.
+as stream have started. This must be uploaded before the task is resolved.
+
+Example:
+``` Javascript
+{
+  version:                "0.2.0",
+  logs: {
+    "stderr":             // URL to stderr
+    "stdout":             // URL to stdout
+    "warnings":           // URL to a task specific log...
+    "worker-commands":    // URL to log of commands worker executed
+    // Worker may put any number of logs in here, the key is a name of the log,
+    // the value is a URL. Workers can put worker-specific logs, and even allow
+    // for task specific logs...
+  }
+}
+```
 
 ### `/<task-id>/runs/<run-id>/results.json`
 Uploaded just before a task is resolved, once uploaded the worker may declare
 the task resolved. This document should contain all interesting results or links
 to interesting artifacts uploaded during the task.
+
+Example:
+``` Javascript
+{
+  "version":            "0.2.0",
+  "artifacts": {
+    "name":             // URL of artifact typically uploaded to ../artifacts/
+    ...
+  },
+  "statistics": {
+    "started":          // Timestamp of executing start
+    "finished":         // Timestamp of execution end
+  },
+  "worker": {
+    "worker_group":     // Worker group identifier
+    "worker_id":        // Worker identifier
+  }
+  "result":             // Task-specific JSON blob
+}
+```
 
 
 ### `/<task-id>/runs/<run-id>/artifacts/...`
