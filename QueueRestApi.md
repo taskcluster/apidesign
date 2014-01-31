@@ -124,4 +124,24 @@ until this method returns `200 OK` or `404`.
 
 
 ### GET  `/claim-work/<worker-type>`
+Poll a task that requires the given worker-type.
 
+**Request**
+
+    {
+      worker_id:      <worker-id>
+    }
+
+**Response**
+
+    {
+      status:         // Task status structure,
+      run_id:         // Run-id assigned to this run
+      logs_url:       // signed url for uploading (expires around taken_until)
+      result_url:     // signed url for uploading (expires around taken_until)
+    }
+
+**Error codes**
+  * `204`, No tasks available, response: `{sleep: <number of seconds>}`
+  * `404`, Task not found (ie. never uploaded or resolved)
+  * `410`, Task have been assigned to another worker.
