@@ -26,6 +26,8 @@ When a task is resolved the following structure is written to this file:
   "result":             // URL to results.json from run that completed the task
   "logs":               // URL to logs.json from run that completed the task
   // If task failed then both `results` and `logs` are undefined.
+  "worker_id":          // worker id that completed the task
+  "worker_group":       // worker group that completed the task
 }
 ```
 
