@@ -7,7 +7,7 @@ layout will be as follows:
     s3://.../<task-id>/task.json
     s3://.../<task-id>/resolution.json
     s3://.../<task-id>/runs/<run-id>/logs.json
-    s3://.../<task-id>/runs/<run-id>/results.json
+    s3://.../<task-id>/runs/<run-id>/result.json
     s3://.../<task-id>/runs/<run-id>/artifacts/...
 
 File Details
@@ -25,7 +25,7 @@ When a task is resolved the following structure is written to this file:
   "status":             // Task status structure
   "result":             // URL to results.json from run that completed the task
   "logs":               // URL to logs.json from run that completed the task
-  // If not completed both `results` and `logs` are undefined.
+  // If task failed then both `results` and `logs` are undefined.
 }
 ```
 
@@ -52,7 +52,7 @@ Example:
 }
 ```
 
-### `/<task-id>/runs/<run-id>/results.json`
+### `/<task-id>/runs/<run-id>/result.json`
 Uploaded just before a task is resolved, once uploaded the worker may declare
 the task resolved. This document should contain all interesting results or links
 to interesting artifacts uploaded during the task.
