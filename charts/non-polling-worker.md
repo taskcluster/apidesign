@@ -1,4 +1,7 @@
 Examples of a Non-Polling Worker
+================================
+
+Chart tool: http://sverweij.github.io/mscgen_js/
 
 ## Example without Worker Failure
 ```

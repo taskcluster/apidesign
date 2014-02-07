@@ -1,6 +1,7 @@
 Examples of a Polling Worker
 ============================
 
+Chart tool: http://sverweij.github.io/mscgen_js/
 
 ## Simple Failure Free Interaction
 _This is the common case._
