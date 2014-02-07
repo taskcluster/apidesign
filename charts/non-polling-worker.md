@@ -75,47 +75,11 @@ Queue       =>  RabbitMQ  : "Pending Task";
 
 
 
-# Non-polling Worker w. Crash Detection (without Crash)
-```
-# Example of a non-polling worker crash detection
-
-Worker, RabbitMQ, Provisioner, Queue;
-
-Provisioner =>  RabbitMQ    : "Declare Y, Subscribe Y";
-
-# Worker declares queue
-Worker      =>  RabbitMQ    : "Declare, Subcribe X";
-Worker      box RabbitMQ    : "Queue X deadletters to Y";
-
-Worker      =>  Queue       : "/claim-work/...";
-
----: Pending task is posted to RabbitMQ;
-
-# As usual worker is listening for pending tasks
-RabbitMQ    =>  Worker      : "M1: Pending Task";
-Worker      =>  Queue       : "/task/.../claim";
-Queue       >>  Worker      : "Task claimed";
-Worker      >>  RabbitMQ    : "Ack M1";
-
----: Now before we start computation;
-
-# Now before we Ack M1
-Worker      =>  RabbitMQ    : "Post 'I crashed' to X";
-RabbitMQ    =>  Worker      : "M2: 'I Crashed";
-
-Worker box Worker : Compute;
-
-Worker      >> RabbitMQ     : "Ack M2";
-
-...;
-```
-
-
 # Non-polling Worker w. Crash Detection (Crash)
 ```
 # Example of a non-polling worker crash detection
 
-Worker, RabbitMQ, Provisioner, Queue;
+Worker : "Worker: w1", RabbitMQ, Provisioner, Queue;
 
 Provisioner =>  RabbitMQ    : "Declare Y, Subscribe Y";
 
@@ -123,30 +87,30 @@ Provisioner =>  RabbitMQ    : "Declare Y, Subscribe Y";
 Worker      =>  RabbitMQ    : "Declare, Subcribe X";
 Worker      box RabbitMQ    : "Queue X deadletters to Y";
 
-Worker      =>  Queue       : "/claim-work/...";
+# Now before we Ack M1
+Worker      =>  RabbitMQ    : "Post 'w1 crashed' to X";
+RabbitMQ    =>  Worker      : "M1: 'w1 Crashed";
+
 
 ---: Pending task is posted to RabbitMQ;
 
 # As usual worker is listening for pending tasks
-RabbitMQ    =>  Worker      : "M1: Pending Task";
+RabbitMQ    =>  Worker      : "M2: Pending Task";
 Worker      =>  Queue       : "/task/.../claim";
 Queue       >>  Worker      : "Task claimed";
-Worker      >>  RabbitMQ    : "Ack M1";
+Worker      >>  RabbitMQ    : "Ack M2";
 
----: Now before we start computation;
+---: Now consider a Crash;
 
-# Now before we Ack M1
-Worker      =>  RabbitMQ    : "Post 'I crashed' to X";
-RabbitMQ    =>  Worker      : "M2: 'I Crashed";
 
 Worker box Worker : Crash;
 
-RabbitMQ box RabbitMQ       : "M2 deadletters to Y";
-RabbitMQ    =>  Provisioner : "M2: Worker crashed";
-Provisioner =>  Queue       : "Worker crashed";
-Queue box Queue             : "Clear taken_until for runs on worker";
+RabbitMQ box RabbitMQ       : "M1 deadletters to Y";
+RabbitMQ    =>  Provisioner : "M1: w1 crashed";
+Provisioner =>  Queue       : "w1 crashed";
+Queue box Queue             : "Clear taken_until for runs with w1";
 Queue       >>  Provisioner : "200, OK";
-Provisioner >>  RabbitMQ    : "Ack M2";
+Provisioner >>  RabbitMQ    : "Ack M1";
 
 ...;
 ```
